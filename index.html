@@ -22,58 +22,90 @@
       <div class="cell" data-cell-index="8"></div>
     </div>
   </div>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.1/socket.io.js"></script>
   <script>
     const board = document.getElementById("board");
     const cells = board.querySelectorAll(".cell");
     let currentPlayer = "";
     let gameEnded = false;
+    let websocket = null;
 
-    const socket = io();
+    // Connect to the WebSocket server
+    function connect() {
+      websocket = new WebSocket("ws://localhost:3000");
 
-    socket.on("startGame", (player) => {
-      currentPlayer = player;
-      console.log(`You are player ${currentPlayer}`);
+      websocket.onopen = function() {
+        console.log("WebSocket connection established.");
+      };
 
-      for (let i = 0; i < cells.length; i++) {
-        cells[i].addEventListener("click", () => {
-          if (gameEnded || cells[i].textContent !== "") {
-            return;
+      websocket.onmessage = function(event) {
+        const message = JSON.parse(event.data);
+        console.log("Received message:", message);
+
+        if (message.type === "startGame") {
+          currentPlayer = message.player;
+          console.log(`You are player ${currentPlayer}`);
+
+          for (let i = 0; i < cells.length; i++) {
+            cells[i].addEventListener("click", () => {
+              if (gameEnded || cells[i].textContent !== "") {
+                return;
+              }
+
+              if (currentPlayer === "X") {
+                cells[i].textContent = "X";
+                cells[i].style.color = "red";
+              } else {
+                cells[i].textContent = "O";
+                cells[i].style.color = "blue";
+              }
+
+              websocket.send(JSON.stringify({
+                type: "makeMove",
+                cellIndex: i
+              }));
+            });
           }
-
-          if (currentPlayer === "X") {
-            cells[i].textContent = "X";
-            cells[i].style.color = "red";
+        } else if (message.type === "cellUpdate") {
+          cells[message.cellIndex].textContent = message.player;
+          cells[message.cellIndex].style.color = message.player === "X" ? "red" : "blue";
+          currentPlayer = currentPlayer === "X" ? "O" : "X";
+        } else if (message.type === "gameOver") {
+          if (message.result === "draw") {
+            alert("The game is a draw!");
           } else {
-            cells[i].textContent = "O";
-            cells[i].style.color = "blue";
+            alert(`Player ${message.result} has won!`);
           }
 
-          socket.emit("makeMove", i);
-        });
+          gameEnded = true;
+        } else if (message.type === "playerDisconnect") {
+          alert("The other player has disconnected.");
+          gameEnded = true;
+        }
+      };
+
+      websocket.onclose = function() {
+        console.log("WebSocket connection closed.");
+      };
+    }
+
+      // Connect to the WebSocket server
+    connect();
+
+    function sendMessage(message) {
+      if (websocket !== null && websocket.readyState === WebSocket.OPEN) {
+        websocket.send(JSON.stringify(message));
       }
-    });
+    }
 
-    socket.on("cellUpdate", (cellData) => {
-      cells[cellData.cellIndex].textContent = cellData.player;
-      cells[cellData.cellIndex].style.color = cellData.player === "X" ? "red" : "blue";
-      currentPlayer = currentPlayer === "X" ? "O" : "X";
-    });
-
-    socket.on("gameOver", (result) => {
-      if (result === "draw") {
-        alert("The game is a draw!");
-      } else {
-        alert(`Player ${result} has won!`);
+    window.addEventListener("beforeunload", () => {
+      if (websocket !== null && websocket.readyState === WebSocket.OPEN) {
+        websocket.send(JSON.stringify({
+          type: "disconnect"
+        }));
+        websocket.close();
       }
-
-      gameEnded = true;
-    });
-
-    socket.on("playerDisconnect", () => {
-      alert("The other player has disconnected.");
-      gameEnded = true;
     });
   </script>
 </body>
 </html>
+

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Tic Tac Toe - Multiplayer</title>
+</head>
+<body>
+  <h1>Tic Tac Toe - Multiplayer</h1>
+  <div id="board">
+    <div class="row">
+      <div class="cell" data-cell-index="0"></div>
+      <div class="cell" data-cell-index="1"></div>
+      <div class="cell" data-cell-index="2"></div>
+    </div>
+    <div class="row">
+      <div class="cell" data-cell-index="3"></div>
+      <div class="cell" data-cell-index="4"></div>
+      <div class="cell" data-cell-index="5"></div>
+    </div>
+    <div class="row">
+      <div class="cell" data-cell-index="6"></div>
+      <div class="cell" data-cell-index="7"></div>
+      <div class="cell" data-cell-index="8"></div>
+    </div>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.1/socket.io.js"></script>
+  <script>
+    const board = document.getElementById("board");
+    const cells = board.querySelectorAll(".cell");
+    let currentPlayer = "";
+    let gameEnded = false;
+
+    const socket = io();
+
+    socket.on("startGame", (player) => {
+      currentPlayer = player;
+      console.log(`You are player ${currentPlayer}`);
+
+      for (let i = 0; i < cells.length; i++) {
+        cells[i].addEventListener("click", () => {
+          if (gameEnded || cells[i].textContent !== "") {
+            return;
+          }
+
+          if (currentPlayer === "X") {
+            cells[i].textContent = "X";
+            cells[i].style.color = "red";
+          } else {
+            cells[i].textContent = "O";
+            cells[i].style.color = "blue";
+          }
+
+          socket.emit("makeMove", i);
+        });
+      }
+    });
+
+    socket.on("cellUpdate", (cellData) => {
+      cells[cellData.cellIndex].textContent = cellData.player;
+      cells[cellData.cellIndex].style.color = cellData.player === "X" ? "red" : "blue";
+      currentPlayer = currentPlayer === "X" ? "O" : "X";
+    });
+
+    socket.on("gameOver", (result) => {
+      if (result === "draw") {
+        alert("The game is a draw!");
+      } else {
+        alert(`Player ${result} has won!`);
+      }
+
+      gameEnded = true;
+    });
+
+    socket.on("playerDisconnect", () => {
+      alert("The other player has disconnected.");
+      gameEnded = true;
+    });
+  </script>
+</body>
+</html>

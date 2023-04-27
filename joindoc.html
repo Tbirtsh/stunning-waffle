@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Collaborative Text Editor</title>
+  <style>
+    #editor {
+      width: 100%;
+      height: 500px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Collaborative Text Editor</h1>
+  <div id="editor" contenteditable="true"></div>
+  <input id="offer-input" type="text" placeholder="Enter offer">
+  <button id="join-btn">Join Document</button>
+
+  <script>
+    const editor = document.querySelector('#editor');
+    const offerInput = document.querySelector('#offer-input');
+    const joinBtn = document.querySelector('#join-btn');
+
+    let doc = '';
+
+    joinBtn.addEventListener('click', () => {
+      // Parse the WebRTC offer and create a connection
+      const connection = new RTCPeerConnection();
+
+      connection.onicecandidate = (event) => {
+        if (event.candidate) {
+          // Send the ICE candidate to the other peer
+          // This should be done over a signaling channel, such as WebSocket or Firebase Realtime Database
+          console.log('Sending ICE candidate:', event.candidate);
+        }
+      };
+
+      const channel = connection.createDataChannel('document');
+      channel.binaryType = 'arraybuffer';
+
+      channel.onopen = () => {
+        console.log('Data channel opened');
+        channel.send(doc);
+      };
+
+      channel.onmessage = (event) => {
+        console.log('Received message:', event.data);
+        doc = event.data;
+        editor.textContent = doc;
+      };
+
+      console.log('Creating data channel');
+
+      const offer = JSON.parse(offerInput.value);
+
+      // Set the remote WebRTC offer and create an answer
+      connection.setRemoteDescription(offer).then(() => {
+        console.log('Creating answer');
+        connection.createAnswer().then((answer) => {
+          console.log('Setting local description');
+          connection.setLocalDescription(answer).then(() => {
+            // Send the WebRTC answer to the other peer
+            // This should be done over a signaling channel, such as WebSocket or Firebase Realtime Database
+            console.log('Sending answer:', answer);
+          });
+        });
+      });
+    });
+  </script>
+</body>
+</html>

